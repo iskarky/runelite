@@ -67,6 +67,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.config.ChatColorConfig;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigDescriptor;
 import net.runelite.client.config.ConfigItem;
@@ -119,17 +120,20 @@ public class ConfigPanel extends PluginPanel
 	private final ConfigManager configManager;
 	private final ScheduledExecutorService executorService;
 	private final RuneLiteConfig runeLiteConfig;
+	private final ChatColorConfig chatColorConfig;
 	private final IconTextField searchBar = new IconTextField();
 	private Map<String, JPanel> children = new TreeMap<>();
 	private int scrollBarPosition = 0;
 
-	public ConfigPanel(PluginManager pluginManager, ConfigManager configManager, ScheduledExecutorService executorService, RuneLiteConfig runeLiteConfig)
+	public ConfigPanel(PluginManager pluginManager, ConfigManager configManager, ScheduledExecutorService executorService,
+		RuneLiteConfig runeLiteConfig, ChatColorConfig chatColorConfig)
 	{
 		super();
 		this.pluginManager = pluginManager;
 		this.configManager = configManager;
 		this.executorService = executorService;
 		this.runeLiteConfig = runeLiteConfig;
+		this.chatColorConfig = chatColorConfig;
 
 		searchBar.setIcon(SEARCH);
 		searchBar.setPreferredSize(new Dimension(100, 30));
@@ -198,9 +202,18 @@ public class ConfigPanel extends PluginPanel
 				newChildren.put(pluginName, groupPanel);
 			});
 
+		addCoreConfig(newChildren, "RuneLite", runeLiteConfig);
+		addCoreConfig(newChildren, "Chat Color", chatColorConfig);
+
+		children = newChildren;
+		openConfigList();
+	}
+
+	private void addCoreConfig(Map<String, JPanel> newChildren, String configName, Config config)
+	{
 		final JPanel groupPanel = buildGroupPanel();
 
-		JLabel name = new JLabel("RuneLite");
+		JLabel name = new JLabel(configName);
 		name.setForeground(Color.WHITE);
 
 		groupPanel.add(name, BorderLayout.CENTER);
@@ -209,17 +222,14 @@ public class ConfigPanel extends PluginPanel
 		buttonPanel.setLayout(new GridLayout(1, 2));
 		groupPanel.add(buttonPanel, BorderLayout.LINE_END);
 
-		final JLabel editConfigButton = buildConfigButton(runeLiteConfig);
+		final JLabel editConfigButton = buildConfigButton(config);
 		buttonPanel.add(editConfigButton);
 
 		final JLabel toggleButton = buildToggleButton(null);
 		toggleButton.setVisible(false);
 		buttonPanel.add(toggleButton);
 
-		newChildren.put("RuneLite", groupPanel);
-
-		children = newChildren;
-		openConfigList();
+		newChildren.put(configName, groupPanel);
 	}
 
 	private JPanel buildGroupPanel()
@@ -494,17 +504,36 @@ public class ConfigPanel extends PluginPanel
 
 			if (cid.getType() == Color.class)
 			{
-				JButton colorPicker = new JButton("Pick a color");
+				String existing = configManager.getConfiguration(cd.getGroup().keyName(), cid.getItem().keyName());
+
+				Color existingColor;
+				JButton colorPicker;
+
+				if (existing == null)
+				{
+					existingColor = Color.BLACK;
+					colorPicker = new JButton("Pick a color");
+				}
+				else
+				{
+					existingColor = Color.decode(existing);
+					colorPicker = new JButton("#" + Integer.toHexString(existingColor.getRGB()).substring(2).toUpperCase());
+				}
+
 				colorPicker.setFocusable(false);
-				colorPicker.setBackground(Color.decode(configManager.getConfiguration(cd.getGroup().keyName(), cid.getItem().keyName())));
+				colorPicker.setBackground(existingColor);
 				colorPicker.addMouseListener(new MouseAdapter()
 				{
 					@Override
 					public void mouseClicked(MouseEvent e)
 					{
 						final JFrame parent = new JFrame();
-						JColorChooser jColorChooser = new JColorChooser(Color.decode(configManager.getConfiguration(cd.getGroup().keyName(), cid.getItem().keyName())));
-						jColorChooser.getSelectionModel().addChangeListener(e1 -> colorPicker.setBackground(jColorChooser.getColor()));
+						JColorChooser jColorChooser = new JColorChooser(existingColor);
+						jColorChooser.getSelectionModel().addChangeListener(e1 ->
+						{
+							colorPicker.setBackground(jColorChooser.getColor());
+							colorPicker.setText("#" + Integer.toHexString(jColorChooser.getColor().getRGB()).substring(2).toUpperCase());
+						});
 						parent.addWindowListener(new WindowAdapter()
 						{
 							@Override

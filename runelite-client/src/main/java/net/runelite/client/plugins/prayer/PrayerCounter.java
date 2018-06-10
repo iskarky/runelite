@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Raqes <j.raqes@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,61 +22,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.examine;
+package net.runelite.client.plugins.prayer;
 
-import java.awt.Color;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
+import java.awt.image.BufferedImage;
+import lombok.Getter;
+import lombok.Setter;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.ui.overlay.infobox.Counter;
 
-@ConfigGroup(
-	keyName = "examine",
-	name = "Examine",
-	description = "Configuration for examine plugin"
-)
-public interface ExamineConfig extends Config
+public class PrayerCounter extends Counter
 {
-	@ConfigItem(
-		position = 2,
-		keyName = "hexColorExamine",
-		name = "Examine messages",
-		description = "Color of examine messages"
-	)
-	default Color getExamineRecolor()
+	@Getter
+	private final PrayerType prayerType;
+
+	@Setter
+	private BufferedImage image;
+
+	PrayerCounter(Plugin plugin, PrayerType prayerType)
 	{
-		return Color.decode("#000000");
+		super(null, plugin, "");
+		this.prayerType = prayerType;
 	}
 
-	@ConfigItem(
-		position = 3,
-		keyName = "hexColorExamineH",
-		name = "Examine messages highlight",
-		description = "Color of examine messages highlight"
-	)
-	default Color getExamineHRecolor()
+	@Override
+	public String toString()
 	{
-		return Color.decode("#0000FF");
+		return "Counter{" + "prayer=" + prayerType.getName() + '}';
 	}
 
-	@ConfigItem(
-		position = 4,
-		keyName = "transparentHexColorExamine",
-		name = "Transparent examine messages",
-		description = "Color of examine messages"
-	)
-	default Color getTransparentExamineRecolor()
+	@Override
+	public String getTooltip()
 	{
-		return Color.decode("#FFFFFF");
+		return prayerType.getDescription();
 	}
 
-	@ConfigItem(
-		position = 5,
-		keyName = "transparentHexColorExamineH",
-		name = "Transparent examine messages highlight",
-		description = "Color of examine messages highlight"
-	)
-	default Color getTransparentExamineHRecolor()
+	@Override
+	public BufferedImage getImage()
 	{
-		return Color.decode("#9090FF");
+		return image;
 	}
 }
